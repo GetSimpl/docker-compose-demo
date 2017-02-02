@@ -1,0 +1,19 @@
+version: '2'
+services:
+  web:
+    image: 373660252802.dkr.ecr.us-east-1.amazonaws.com/demo_ui:latest
+    mem_limit: 134217728
+    links:
+      - demo_svc
+    environment:
+      - SERVICE_URI_HOST=demo_svc
+      - SERVICE_URI_PORT=9000
+    ports:
+      - "80:8080"
+  demo_svc:
+    image: 373660252802.dkr.ecr.us-east-1.amazonaws.com/demo_svc:latest
+    mem_limit: 134217728
+    expose:
+      - 9000
+    environment:
+      - PORT=9000
