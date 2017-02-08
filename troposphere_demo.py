@@ -1,9 +1,11 @@
 from troposphere import Ref, Template
 import troposphere.ec2 as ec2
-from troposphere.ecs import Cluster
+from troposphere.ecs import Cluster, ContainerDefinition, TaskDefinition, Service, LoadBalancer, PortMapping
 from troposphere.autoscaling import LaunchConfiguration
 from troposphere import Base64, Join
 from troposphere.autoscaling import AutoScalingGroup, Metadata
+from troposphere.elasticloadbalancing import LoadBalancer as ELBLoadBalancer
+
 
 from troposphere.iam import InstanceProfile
 from troposphere.iam import Role
@@ -35,23 +37,24 @@ demo_cluster = t.add_resource(Cluster('DemoCluster',))
 
 
 demo_lc = t.add_resource(LaunchConfiguration('DemoLc',
-    UserData=Base64(Join('',
-                        ["",
-                "#!/bin/bash\n",
-                "echo ECS_CLUSTER=",
-                {
-                  "Ref": "DemoCluster"
-                },
-                " >> /etc/ecs/ecs.config\n"
-                ]
-                        )),
-    ImageId='ami-5b6dde3b',
-    KeyName='ecs-demo',
-    SecurityGroups=['sg-bed64ddb'],
-    IamInstanceProfile=Ref('DemoInstanceProfile'),
-    InstanceType='t2.medium',
-    AssociatePublicIpAddress='true',
-))
+                                             UserData=Base64(Join('',
+                                                                  ["",
+                                                                   "#!/bin/bash\n",
+                                                                   "echo ECS_CLUSTER=",
+                                                                   {
+                                                                       "Ref": "DemoCluster"
+                                                                   },
+                                                                      " >> /etc/ecs/ecs.config\n"
+                                                                   ]
+                                                                  )),
+                                             ImageId='ami-5b6dde3b',
+                                             KeyName='ecs-demo',
+                                             SecurityGroups=['sg-bed64ddb'],
+                                             IamInstanceProfile=Ref(
+                                                 'DemoInstanceProfile'),
+                                             InstanceType='t2.medium',
+                                             AssociatePublicIpAddress='true',
+                                             ))
 
 demo_asg = t.add_resource(AutoScalingGroup(
     'DemoAsg',
@@ -59,9 +62,34 @@ demo_asg = t.add_resource(AutoScalingGroup(
     MinSize='2',
     MaxSize='2',
     VPCZoneIdentifier=['subnet-0dc03a7a', 'subnet-5170d434'],
-    #AvailabilityZones=[],
+    # AvailabilityZones=[],
     LaunchConfigurationName=Ref('DemoLc'),
 ))
 
+demo_cd = ContainerDefinition(
+    Image='725827686899.dkr.ecr.us-west-2.amazonaws.com/arun/docker/demo_svc:latest', Name='demo-lb-containername', Memory=128, PortMappings=[PortMapping(ContainerPort=9000, HostPort=9000)])  # all these are required or an alternative for each attribute
+
+demo_td = t.add_resource(TaskDefinition("DemoTD", ContainerDefinitions=[
+                         demo_cd], Family='demo-ecsdemo_svc'))
+
+demo_elb_lb = ELBLoadBalancer('DemoElbLb', Listeners=[
+    {
+        "InstancePort": "9000",
+        "LoadBalancerPort": "80",
+        "Protocol": "TCP",
+        "InstanceProtocol": "TCP"
+    }
+], LoadBalancerName='DemoELbLb', Subnets=['subnet-0dc03a7a', 'subnet-5170d434'],)
+
+
+t.add_resource(demo_elb_lb)
+
+demo_lb = LoadBalancer('DemoLB', ContainerPort='9000',
+                       ContainerName='demo-lb-containername', LoadBalancerName='DemoElblb')
+
+#t.add_resource(demo_lb)
+
+# demo_service = t.add_resource(Service('DemoService', TaskDefinition=Ref('DemoTD'), Cluster=Ref(
+#     'DemoCluster'), Role=Ref('DemoClusterRole'), DesiredCount=2, LoadBalancers=[demo_lb]))
 
 print(t.to_json())
