@@ -1,0 +1,28 @@
+Deployment Flow:
+- Environment as cloud formation configuration setup - how ?
+    - Definition of Done
+        - Bring up new environment from ground zero with no errors.
+- Auto scaling
+    - Definition of Done
+        - Run a performance test against svc and UI 
+        - See them independently auto scaling
+- Occasionally happening - add environment variables and change environment variable values - how ?
+    - Done
+        - Add/Remove variables 
+
+- Most frequent - code push - how ?
+
+
+
+1. Perform load test to test the auto - scaling
+2. 
+
+
+
+Troposphere task
+
+- Things to templatize
+    - VPC & Subnets
+    - SG
+- Identify and parameterise
+    - 
