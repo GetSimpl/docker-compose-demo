@@ -1,6 +1,6 @@
 from troposphere import Ref, Template
 import troposphere.ec2 as ec2
-from troposphere.ecs import Cluster, ContainerDefinition, TaskDefinition, Service, LoadBalancer, PortMapping
+from troposphere.ecs import Cluster, ContainerDefinition, TaskDefinition, Service, LoadBalancer, PortMapping, Environment
 from troposphere.autoscaling import LaunchConfiguration
 from troposphere import Base64, Join
 from troposphere.autoscaling import AutoScalingGroup, Metadata
@@ -67,29 +67,47 @@ demo_asg = t.add_resource(AutoScalingGroup(
 ))
 
 demo_cd = ContainerDefinition(
-    Image='725827686899.dkr.ecr.us-west-2.amazonaws.com/arun/docker/demo_svc:latest', Name='demo-lb-containername', Memory=128, PortMappings=[PortMapping(ContainerPort=9000, HostPort=9000)])  # all these are required or an alternative for each attribute
+    Image='725827686899.dkr.ecr.us-west-2.amazonaws.com/arun/docker/demo_svc:latest', 
+    Name='demo-lb-containername', 
+    Memory=128,
+    Environment=[Environment(Name='PORT', Value='9000')],
+    PortMappings=[PortMapping(ContainerPort=9000, HostPort=9000)])  # all these are required or an alternative for each attribute
 
 demo_td = t.add_resource(TaskDefinition("DemoTD", ContainerDefinitions=[
                          demo_cd], Family='demo-ecsdemo_svc'))
 
-demo_elb_lb = ELBLoadBalancer('DemoElbLb', Listeners=[
+demo_elb_lb = ELBLoadBalancer('DemoElbLb2', Listeners=[
     {
         "InstancePort": "9000",
         "LoadBalancerPort": "80",
         "Protocol": "TCP",
         "InstanceProtocol": "TCP"
     }
-], LoadBalancerName='DemoELbLb', Subnets=['subnet-0dc03a7a', 'subnet-5170d434'],)
+], LoadBalancerName='DemoElbLb2', Subnets=['subnet-0dc03a7a', 'subnet-5170d434'],)
 
 
 t.add_resource(demo_elb_lb)
 
 demo_lb = LoadBalancer('DemoLB', ContainerPort='9000',
-                       ContainerName='demo-lb-containername', LoadBalancerName='DemoElblb')
+                       ContainerName='demo-lb-containername', LoadBalancerName='DemoElbLb2')
 
 #t.add_resource(demo_lb)
 
-# demo_service = t.add_resource(Service('DemoService', TaskDefinition=Ref('DemoTD'), Cluster=Ref(
-#     'DemoCluster'), Role=Ref('DemoClusterRole'), DesiredCount=2, LoadBalancers=[demo_lb]))
+
+demo_service_role = t.add_resource(Role(
+    'DemoServiceRole',
+    Path='/',
+    ManagedPolicyArns=[
+        'arn:aws:iam::aws:policy/AmazonEC2ContainerServiceFullAccess',
+    ],
+    AssumeRolePolicyDocument={'Version': '2012-10-17',
+                              'Statement': [{'Action': 'sts:AssumeRole',
+                                             'Principal':
+                                             {'Service': 'ecs.amazonaws.com'},
+                                             'Effect': 'Allow',
+                                             }]}
+))
+t.add_resource(Service('DemoService', TaskDefinition=Ref('DemoTD'), Cluster=Ref(
+    'DemoCluster'), Role=Ref('DemoServiceRole'), DesiredCount=2, LoadBalancers=[demo_lb]))
 
 print(t.to_json())
