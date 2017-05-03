@@ -17,4 +17,4 @@ deployment:
     branch: [master]
     commands: 
       - echo 1
-      - export SERVICE_NAME=Blacklisting && export ENV_NAME=dev && python ./ecs-platform/deployment/deploy.py
+        #- export SERVICE_NAME=Blacklisting && export ENV_NAME=dev && python ./ecs-platform/deployment/deploy.py
