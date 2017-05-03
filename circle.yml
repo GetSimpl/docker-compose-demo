@@ -1,0 +1,20 @@
+machine:
+  services: 
+    - docker
+  timezone: Asia/Kolkata
+
+test:
+  override:
+    - echo 1
+
+dependencies:
+  pre:
+    - git clone git@github.com:GetSimpl/ecs-platform.git
+    - pip install -r ./ecs-platform/requirements.txt
+
+deployment: 
+  dev: 
+    branch: [master]
+    commands: 
+      - echo 1
+      - export SERVICE_NAME=Blacklisting && export ENV_NAME=dev && python ./ecs-platform/deployment/deploy.py
