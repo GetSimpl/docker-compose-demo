@@ -7,7 +7,8 @@ A sample app used to demonstrate `cloudlift` session.
 - Docker
 
 
-** To run:**
+**To run:**
+
 ```
 # Cloning with a unique name ensures when you deploy there's no conflict
 git clone git@github.com:GetSimpl/docker-compose-demo.git <yourname>-sample
