@@ -5,7 +5,5 @@ services:
     image: ecs-standalone-demo:latest
     env_file:
       - development.env
-    expose:
-      - "80"
     ports:
-      - "80:80"
+      - "8080:80"

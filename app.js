@@ -2,6 +2,7 @@ var express = require('express')
 var app = express()
 
 app.get('/', function (req, res) {
+    console.log("Got the request.")
     res.send('This is version no. ' + process.env.VERSION)
 })
 

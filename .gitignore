@@ -2,5 +2,5 @@
 node_modules
 .vscode/*
 *.json
-development.env
+*.env
 *.log
