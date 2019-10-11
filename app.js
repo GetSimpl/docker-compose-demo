@@ -9,3 +9,11 @@ app.get('/', function (req, res) {
 app.listen(process.env.PORT, function () {
     console.log('Example app listening on port !' + process.env.PORT)
 })
+
+process.on("SIGTERM", () => {
+    console.log("Received SIGTERM.");
+    app.listen.close(function () {
+        winston.info("Closed out remaining connections.");
+        process.exit(143);
+    });
+});
